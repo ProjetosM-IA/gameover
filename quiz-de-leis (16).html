@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GameOver — Quiz de Leis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3F4EF;
+    --card:#FFFFFF;
+    --ink:#1C2528;
+    --ink-soft:#5B6B71;
+    --line:#DCE1D8;
+    --cat0:#14646B; --cat0-soft:#E3EFEF;
+    --cat1:#54418F; --cat1-soft:#EBE7F5;
+    --cat2:#8A5A14; --cat2-soft:#F4EBDC;
+    --cat3:#8C2F4F; --cat3-soft:#F5E4EA;
+    --ok:#2E7D46;  --ok-soft:#E4F1E7;
+    --err:#B3402F; --err-soft:#F8E7E3;
+    --hl:#F1E05A;  --hl-soft:#FBF6DC;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(28,37,40,.06),0 8px 24px rgba(28,37,40,.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--paper);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;line-height:1.5;min-height:100vh}
+  .wrap{max-width:780px;margin:0 auto;padding:28px 18px 90px}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:26px;flex-wrap:wrap}
+  .brand{font-family:'Spectral',serif;font-weight:700;font-size:1.5rem;letter-spacing:-.01em;cursor:pointer}
+  .brand .mark{background:linear-gradient(transparent 52%,var(--hl) 52%,var(--hl) 94%,transparent 94%)}
+  .brand small{display:block;font-family:'Archivo';font-weight:500;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+  .topnav{display:flex;gap:6px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:4px}
+  .navlink{padding:8px 18px;border-radius:99px;font-weight:600;font-size:.88rem;color:var(--ink-soft)}
+  .navlink.active{background:var(--ink);color:#fff}
+  .navlink:not(.active):hover{color:var(--ink)}
+
+  /* ---------- statistics ---------- */
+  .stats-summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .sum-card{flex:1;min-width:140px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;text-align:center}
+  .sum-card b{display:block;font-family:'Spectral',serif;font-size:1.9rem;font-weight:700;line-height:1.15}
+  .sum-card span{font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  input[type=date],input[type=number]{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font-family:inherit;font-size:.95rem;background:#fff;color:var(--ink)}
+  .qty-input{font-family:'Spectral',serif;font-size:1.3rem !important;font-weight:700;text-align:center}
+  .stat-entry{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px 18px;margin-bottom:10px;flex-wrap:wrap}
+  .stat-entry .info{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .stat-entry .date{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .stat-entry .mat{font-family:'Spectral',serif;font-weight:600;font-size:1.05rem}
+  .stat-entry .ass{font-size:.88rem;color:var(--ink-soft)}
+  .stat-entry .right{display:flex;align-items:center;gap:12px}
+  .qty-badge{background:var(--hl-soft);border:1.5px solid #E8DCA5;border-radius:10px;padding:8px 14px;text-align:center;min-width:86px}
+  .qty-badge b{display:block;font-family:'Spectral',serif;font-size:1.4rem;font-weight:700;line-height:1.1}
+  .qty-badge span{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+  .qty-stepper{display:flex;align-items:center;gap:8px}
+  .step-btn{width:36px;height:36px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);font-size:1.25rem;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--ink);transition:background .12s ease,border-color .12s ease,transform .08s ease}
+  .step-btn:hover:not(:disabled){border-color:var(--ink-soft);background:var(--paper)}
+  .step-btn:active:not(:disabled){transform:scale(.92)}
+  .step-btn.plus:hover:not(:disabled){border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
+  .step-btn.minus:hover:not(:disabled){border-color:var(--err);color:var(--err);background:var(--err-soft)}
+  .step-btn:disabled{opacity:.35;cursor:default}
+  .stat-entry .acts{display:flex;flex-direction:column;gap:4px}
+  .stat-entry .acts button{font-size:.8rem;font-weight:600;color:var(--ink-soft);text-decoration:underline}
+  .stat-entry .acts button:hover{color:var(--ink)}
+  .stat-entry .acts button.d:hover{color:var(--err)}
+  @media (max-width:560px){ .stat-grid{grid-template-columns:1fr} }
+
+  /* ---------- metas ---------- */
+  .goal-section{margin-bottom:22px}
+  .goal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+  .goal-head h3{font-family:'Spectral',serif;font-size:1.15rem;font-weight:700}
+  .goal-card{padding:20px 22px;margin-bottom:12px}
+  .goal-title{font-family:'Spectral',serif;font-weight:700;font-size:1.15rem}
+  .goal-period{font-size:.8rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-top:2px}
+  .goal-nums{display:flex;align-items:baseline;gap:8px;margin:14px 0 8px;flex-wrap:wrap}
+  .goal-nums .gdone{font-family:'Spectral',serif;font-size:2rem;font-weight:700;line-height:1}
+  .goal-nums .gtarget{color:var(--ink-soft);font-weight:600}
+  .goal-nums .gleft{margin-left:auto;font-weight:700;padding:5px 12px;border-radius:99px;font-size:.85rem;background:var(--hl-soft);border:1.5px solid #E8DCA5}
+  .goal-nums .gleft.done{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+  .goal-nums .gleft.over{background:var(--err-soft);border-color:var(--err);color:var(--err)}
+  .gbar{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+  .gbar>div{height:100%;background:var(--cat0);border-radius:99px;transition:width .4s ease}
+  .gbar>div.full{background:var(--ok)}
+  .goal-meta{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:.85rem;color:var(--ink-soft);flex-wrap:wrap}
+  .goal-acts{display:flex;gap:12px;margin-top:12px}
+  .goal-acts button{font-size:.82rem;font-weight:600;color:var(--ink-soft);text-decoration:underline}
+  .goal-acts button:hover{color:var(--ink)}
+  .goal-acts button.d:hover{color:var(--err)}
+
+  /* ---------- backup ---------- */
+  .code-area{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.76rem;line-height:1.5;min-height:130px;word-break:break-all}
+  input[type=file]{width:100%;padding:10px;border:1.5px dashed var(--line);border-radius:9px;background:#fff;font-size:.88rem;color:var(--ink-soft)}
+  input[type=file]::file-selector-button{font-family:inherit;font-weight:600;border:none;background:var(--ink);color:#fff;padding:8px 14px;border-radius:8px;margin-right:12px;cursor:pointer}
+
+  /* ---------- lixeira ---------- */
+  .trash-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+  .trash-section{margin-bottom:28px}
+  .trash-section h3{font-family:'Spectral',serif;font-size:1.15rem;font-weight:700;margin-bottom:12px}
+  .trash-item{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px 18px;margin-bottom:10px;flex-wrap:wrap;opacity:.92}
+  .trash-item .info{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .trash-item .tname{font-family:'Spectral',serif;font-weight:600;font-size:1.05rem}
+  .trash-item .tmeta{font-size:.82rem;color:var(--ink-soft)}
+  .trash-item .tdate{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .trash-item .tacts{display:flex;gap:8px;flex-wrap:wrap}
+
+  .eyebrow{font-size:.7rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  button{font-family:inherit;font-size:1rem;cursor:pointer;border:none;background:none;color:inherit}
+  button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--cat0);outline-offset:2px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:10px;font-weight:600;transition:transform .08s ease,background .15s ease}
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:var(--ink);color:#fff}
+  .btn-primary:hover{background:#31423f}
+  .btn-ghost{border:1.5px solid var(--line);background:var(--card)}
+  .btn-ghost:hover{border-color:var(--ink-soft)}
+  .btn-sm{padding:7px 13px;font-size:.85rem;border-radius:8px}
+  .btn-danger{color:var(--err)}
+  .hidden{display:none !important}
+
+  /* ---------- home ---------- */
+  .home-intro{font-family:'Spectral',serif;font-size:1.15rem;max-width:56ch;margin-bottom:24px}
+  .quiz-list{display:flex;flex-direction:column;gap:14px;margin-bottom:26px}
+  .quiz-item{padding:16px 22px;display:flex;flex-direction:column}
+  .quiz-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;padding:4px 0}
+  .quiz-toggle .thead{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .quiz-toggle h3{font-family:'Spectral',serif;font-size:1.25rem;font-weight:600}
+  .quiz-toggle:hover h3{background:linear-gradient(transparent 62%,var(--hl-soft) 62%,var(--hl-soft) 96%,transparent 96%)}
+  .quiz-toggle .chev{font-size:1rem;color:var(--ink-soft);transition:transform .2s ease;flex-shrink:0}
+  .quiz-toggle .chev.open{transform:rotate(180deg)}
+  .quiz-body{display:flex;flex-direction:column;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .quiz-item h3{font-family:'Spectral',serif;font-size:1.25rem;font-weight:600}
+  .quiz-item .law{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+  .quiz-item p.desc{color:var(--ink-soft);font-size:.92rem}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:.75rem;font-weight:600;padding:4px 10px;border-radius:99px}
+  .note-box{background:var(--hl-soft);border-left:4px solid var(--hl);border-radius:0 8px 8px 0;padding:10px 14px;font-family:'Spectral',serif;font-style:italic;font-size:.95rem;white-space:pre-wrap}
+  .note-box .eyebrow{font-family:'Archivo';font-style:normal;display:block;margin-bottom:4px}
+  .quiz-item-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px;flex-wrap:wrap}
+  .best{font-size:.8rem;color:var(--ink-soft)}
+  .row-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .restore{margin-top:14px;font-size:.85rem;color:var(--ink-soft);text-decoration:underline}
+
+  /* ---------- menus (pastas) ---------- */
+  .menu-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+  .mtab{padding:7px 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);font-weight:600;font-size:.85rem;color:var(--ink-soft);transition:background .15s ease,border-color .15s ease}
+  .mtab:hover{border-color:var(--ink-soft)}
+  .mtab.active{background:var(--ink);border-color:var(--ink);color:#fff}
+  .mtab .count{font-weight:500;opacity:.75;margin-left:4px}
+  .mtab.new-menu{border-style:dashed;color:var(--ink-soft)}
+  .mtab[data-mid]{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+  .mtab.dragging{opacity:.65;cursor:grabbing;transform:scale(1.06);box-shadow:0 4px 14px rgba(28,37,40,.25);z-index:5;position:relative}
+  .menu-actions{display:flex;gap:14px;align-items:center;margin:-4px 0 16px;font-size:.82rem}
+  .menu-actions button{color:var(--ink-soft);font-size:.82rem;font-weight:600;text-decoration:underline}
+  .menu-actions button:hover{color:var(--ink)}
+  .menu-actions .del-menu:hover{color:var(--err)}
+  .menu-select{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;color:var(--ink-soft)}
+  .menu-select select{font-family:inherit;font-size:.82rem;font-weight:600;color:var(--ink);padding:6px 8px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);max-width:170px;cursor:pointer}
+  .empty-menu{padding:20px 22px;color:var(--ink-soft);font-size:.92rem}
+
+  /* ---------- modais (substituem prompt/confirm/alert) ---------- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(28,37,40,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal{max-width:460px;width:100%;padding:24px;display:flex;flex-direction:column;gap:14px}
+  .modal h3{font-family:'Spectral',serif;font-size:1.2rem;font-weight:700}
+  .modal .mmsg{color:var(--ink-soft);font-size:.95rem;white-space:pre-wrap}
+  .modal .minput{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font-family:inherit;font-size:.95rem}
+  .modal .mactions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
+  .btn.btn-red{background:var(--err);color:#fff}
+  .btn.btn-red:hover{background:#93331f}
+
+  /* ---------- quiz ---------- */
+  .quiz-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+  .quiz-top h2{font-family:'Spectral',serif;font-size:1.05rem;font-weight:600}
+  .quiz-top-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .counter{font-size:.85rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .progress{height:5px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:12px}
+  .progress>div{height:100%;background:var(--ink);border-radius:99px;transition:width .3s ease}
+  .scoreboard{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .sb{font-size:.8rem;font-weight:700;padding:5px 12px;border-radius:99px;font-variant-numeric:tabular-nums;border:1.5px solid transparent;font-family:inherit}
+  .sb.ok{background:var(--ok-soft);color:var(--ok)}
+  .sb.err{background:var(--err-soft);color:var(--err)}
+  .sb.rest{background:var(--card);border:1.5px solid var(--line);color:var(--ink-soft);font-weight:600}
+  button.sb{cursor:default}
+  button.sb.clickable{cursor:pointer;transition:transform .08s ease,border-color .12s ease,box-shadow .12s ease}
+  button.sb.clickable.ok:hover{border-color:var(--ok);box-shadow:0 1px 6px rgba(46,125,70,.25)}
+  button.sb.clickable.err:hover{border-color:var(--err);box-shadow:0 1px 6px rgba(179,64,47,.25)}
+  button.sb.clickable:active{transform:scale(.95)}
+  .sb .redo{font-size:.9em;margin-left:4px;opacity:.8}
+  .qcard{padding:30px 28px}
+  .qcard .eyebrow{margin-bottom:14px}
+  .inciso{font-family:'Spectral',serif;font-size:1.3rem;line-height:1.5;font-weight:500;margin-bottom:26px}
+  .answers{display:grid;gap:12px}
+  .ans{display:flex;align-items:center;gap:14px;text-align:left;padding:15px 18px;border:1.5px solid var(--line);border-left-width:7px;border-radius:10px;font-weight:600;font-size:1.02rem;background:var(--card);transition:background .15s ease,border-color .15s ease}
+  .ans .key{font-size:.72rem;font-weight:600;color:var(--ink-soft);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+  .ans small{display:block;font-weight:500;font-size:.78rem;color:var(--ink-soft)}
+  .ans:hover:not(:disabled){background:var(--paper)}
+  .ans:disabled{cursor:default;opacity:.55}
+  .ans.picked-ok{border-color:var(--ok);background:var(--ok-soft);opacity:1}
+  .ans.picked-err{border-color:var(--err);background:var(--err-soft);opacity:1}
+  .ans.reveal{border-color:var(--ok);opacity:1}
+
+  .feedback{margin-top:20px;padding:18px 20px;border-radius:10px;display:flex;flex-direction:column;gap:8px}
+  .feedback.ok{background:var(--ok-soft)}
+  .feedback.err{background:var(--err-soft)}
+  .feedback .verdict{font-family:'Spectral',serif;font-weight:700;font-size:1.1rem}
+  .feedback.ok .verdict{color:var(--ok)}
+  .feedback.err .verdict{color:var(--err)}
+  .mark-sweep{background:linear-gradient(transparent 45%,var(--hl) 45%,var(--hl) 92%,transparent 92%) left/0% 100% no-repeat;animation:sweep .6s .1s ease-out forwards;font-weight:700}
+  @keyframes sweep{to{background-size:100% 100%}}
+  @media (prefers-reduced-motion:reduce){
+    .mark-sweep{animation:none;background-size:100% 100%}
+    .progress>div{transition:none}
+  }
+  .feedback-actions{margin-top:14px;display:flex;justify-content:flex-end}
+
+  /* ---------- results ---------- */
+  .res-card{padding:34px 30px;text-align:center;margin-bottom:20px}
+  .res-score{font-family:'Spectral',serif;font-size:3.4rem;font-weight:700;line-height:1}
+  .res-sub{color:var(--ink-soft);margin-top:8px}
+  .res-grade{margin:18px auto 0;display:inline-flex;align-items:baseline;gap:10px;padding:12px 22px;border-radius:12px;background:var(--hl-soft);border:1.5px solid #E8DCA5}
+  .res-grade .glabel{font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft)}
+  .res-grade .gval{font-family:'Spectral',serif;font-size:2rem;font-weight:700}
+  .res-grade .gmax{color:var(--ink-soft);font-weight:600}
+  .res-concept{margin-top:10px;font-family:'Spectral',serif;font-style:italic;font-size:1.05rem}
+  .res-breakdown{display:flex;justify-content:center;gap:24px;margin-top:20px;flex-wrap:wrap}
+  .res-breakdown div{font-size:.9rem}
+  .res-breakdown b{display:block;font-size:1.15rem}
+  .res-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px}
+  .err-review h3{font-family:'Spectral',serif;font-size:1.15rem;margin-bottom:12px}
+  .err-item{padding:16px 18px;margin-bottom:10px}
+  .err-item .txt{font-family:'Spectral',serif;font-size:1rem;margin-bottom:8px}
+  .err-item .fix{font-size:.85rem}
+  .err-item .fix b{padding:1px 6px;border-radius:5px}
+
+  /* ---------- editor ---------- */
+  .form-card{padding:26px 24px;display:flex;flex-direction:column;gap:18px}
+  .form-card h2{font-family:'Spectral',serif;font-size:1.35rem;font-weight:700}
+  .field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px}
+  .field .hint{font-weight:400;color:var(--ink-soft);font-size:.8rem;margin-top:4px}
+  .opt{font-weight:400;color:var(--ink-soft)}
+  input[type=text],textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font-family:inherit;font-size:.95rem;background:#fff;color:var(--ink)}
+  textarea{min-height:100px;resize:vertical;line-height:1.55}
+  textarea.notes{font-family:'Spectral',serif;font-style:italic;background:var(--hl-soft);border-color:#E8DCA5}
+  .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+  .cat-block{border:1.5px solid var(--line);border-left-width:7px;border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:14px;position:relative;margin-bottom:16px}
+  .cat-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .cat-head .eyebrow{letter-spacing:.12em}
+  .cat-toggle{display:flex;align-items:center;gap:10px;text-align:left;flex:1;min-width:0;padding:2px 0}
+  .cat-toggle .chev{font-size:.9rem;color:var(--ink-soft);transition:transform .2s ease;flex-shrink:0}
+  .cat-toggle .chev.open{transform:rotate(180deg)}
+  .cat-toggle .cat-preview{font-family:'Spectral',serif;font-weight:600;font-size:1.02rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .cat-toggle .cat-count{font-size:.78rem;color:var(--ink-soft);font-weight:600;white-space:nowrap}
+  .cat-toggle:hover .cat-preview{background:linear-gradient(transparent 62%,var(--hl-soft) 62%,var(--hl-soft) 96%,transparent 96%)}
+  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .item-list{display:flex;flex-direction:column;gap:8px}
+  .item-row{display:grid;grid-template-columns:76px 1fr 34px;gap:8px;align-items:start}
+  .item-row input.num{text-align:center;font-weight:600;padding:9px 6px}
+  .item-row .pgrp{display:flex;align-items:center;gap:5px}
+  .item-row .psym{font-family:'Spectral',serif;font-weight:700;font-size:1.1rem;color:var(--ink-soft)}
+  .item-row input.pnum{background:var(--hl-soft);border-color:#E8DCA5;font-size:.8rem;padding:9px 4px;min-width:0}
+  .item-row textarea.itxt{min-height:0;height:auto;padding:9px 12px;font-family:'Spectral',serif;font-size:.95rem}
+  .item-row .del{height:40px;border-radius:8px;color:var(--err);font-size:1.15rem;line-height:1;border:1.5px solid transparent}
+  .item-row .del:hover{border-color:var(--err);background:var(--err-soft)}
+  .cat-tools{display:flex;gap:8px;flex-wrap:wrap}
+  details.bulk{border:1.5px dashed var(--line);border-radius:9px;padding:10px 12px}
+  details.bulk summary{cursor:pointer;font-weight:600;font-size:.85rem;color:var(--ink-soft)}
+  details.bulk .inner{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .form-error{color:var(--err);font-size:.88rem;font-weight:600}
+  .form-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+  .editor-danger{display:flex;justify-content:flex-start}
+
+  .back{margin-bottom:18px;font-weight:600;color:var(--ink-soft);display:inline-flex;align-items:center;gap:6px}
+  .back:hover{color:var(--ink)}
+
+  @media (max-width:560px){
+    .qcard{padding:22px 18px}
+    .inciso{font-size:1.14rem}
+    .meta-grid,.cat-grid{grid-template-columns:1fr}
+    .res-score{font-size:2.6rem}
+    .item-row{grid-template-columns:60px 1fr 34px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand" onclick="goHome()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')goHome()">
+      <span class="mark">GameOver</span>
+      <small>quiz de artigos de lei</small>
+    </div>
+    <nav class="topnav">
+      <button class="navlink" id="nav-quiz" onclick="goHome()">Quizzes</button>
+      <button class="navlink" id="nav-stats" onclick="openStats()">Statistics</button>
+      <button class="navlink" id="nav-trash" onclick="openTrash()">🗑 Lixeira</button>
+      <button class="navlink" id="nav-backup" onclick="openBackup()">Backup</button>
+    </nav>
+  </header>
+
+  <!-- ============ HOME ============ -->
+  <section id="screen-home">
+    <p class="home-intro">Incisos parecidos demais? Treine classificando cada um no artigo certo, até a diferença ficar automática.</p>
+    <div id="menu-bar" class="menu-bar"></div>
+    <div id="menu-actions" class="menu-actions hidden"></div>
+    <div id="quiz-list" class="quiz-list"></div>
+    <button class="btn btn-primary" onclick="openEditor(null)">+ Criar novo quiz</button>
+    <div id="restore-area"></div>
+  </section>
+
+  <!-- ============ EDITOR ============ -->
+  <section id="screen-editor" class="hidden">
+    <button class="back" onclick="cancelEditor()">← Voltar</button>
+    <div class="card form-card">
+      <h2 id="editor-title"></h2>
+      <div class="meta-grid">
+        <div class="field">
+          <label for="f-name">Nome do quiz</label>
+          <input type="text" id="f-name" placeholder="Ex.: Princípios × Diretrizes">
+        </div>
+        <div class="field">
+          <label for="f-law">Lei <span class="opt">(opcional)</span></label>
+          <input type="text" id="f-law" placeholder="Ex.: Lei nº 14.735/2023">
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-desc">Descrição <span class="opt">(opcional)</span></label>
+        <input type="text" id="f-desc" placeholder="Ex.: Arts. 4º e 5º — Lei Orgânica Nacional das Polícias Civis">
+      </div>
+      <div class="field">
+        <label for="f-notes">Anotações <span class="opt">(opcional)</span></label>
+        <textarea id="f-notes" class="notes" placeholder="Suas observações de estudo: macetes, pegadinhas, incisos que confundem…"></textarea>
+        <p class="hint">As anotações aparecem no card do quiz, como um lembrete de marca-texto.</p>
+      </div>
+
+      <div>
+        <p class="eyebrow" style="margin-bottom:10px">Categorias e incisos</p>
+        <div id="cat-container"></div>
+        <button class="btn btn-ghost btn-sm" id="add-cat" onclick="addCategory()">+ Adicionar categoria</button>
+      </div>
+
+      <p class="form-error hidden" id="form-error"></p>
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="cancelEditor()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveEditor()">Salvar quiz</button>
+      </div>
+      <div class="editor-danger">
+        <button class="btn btn-danger btn-sm hidden" id="editor-delete" onclick="deleteFromEditor()">Excluir este quiz</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATISTICS ============ -->
+  <section id="screen-stats" class="hidden">
+    <p class="home-intro">Seu diário de questões: registre a matéria, o assunto, a data e quantas questões você resolveu.</p>
+    <div class="stats-summary" id="stats-summary"></div>
+
+    <div class="goal-section">
+      <div class="goal-head">
+        <h3>Metas de questões</h3>
+        <button class="btn btn-ghost btn-sm" id="goal-new" onclick="openGoalForm()">+ Nova meta</button>
+      </div>
+      <div class="card form-card hidden" id="goal-form" style="margin-bottom:14px">
+        <h2 id="goal-form-title">Nova meta</h2>
+        <div class="stat-grid">
+          <div class="field">
+            <label for="g-nome">Nome da meta <span class="opt">(opcional)</span></label>
+            <input type="text" id="g-nome" placeholder="Ex.: Reta final do concurso">
+          </div>
+          <div class="field">
+            <label for="g-target">Meta de questões</label>
+            <input type="number" id="g-target" class="qty-input" min="1" step="1" inputmode="numeric" placeholder="500">
+          </div>
+          <div class="field">
+            <label for="g-inicio">Dia do início</label>
+            <input type="date" id="g-inicio">
+          </div>
+          <div class="field">
+            <label for="g-fim">Dia final</label>
+            <input type="date" id="g-fim">
+          </div>
+        </div>
+        <p class="form-error hidden" id="goal-error"></p>
+        <div class="form-actions">
+          <button class="btn btn-ghost" onclick="closeGoalForm()">Cancelar</button>
+          <button class="btn btn-primary" id="goal-save" onclick="saveGoal()">Salvar meta</button>
+        </div>
+      </div>
+      <div id="goal-list"></div>
+    </div>
+    <div class="card form-card">
+      <h2 id="stat-form-title">Registrar questões</h2>
+      <div class="stat-grid">
+        <div class="field">
+          <label for="st-materia">Matéria</label>
+          <input type="text" id="st-materia" list="materias-list" placeholder="Ex.: Direito Penal">
+          <datalist id="materias-list"></datalist>
+        </div>
+        <div class="field">
+          <label for="st-assunto">Assunto</label>
+          <input type="text" id="st-assunto" placeholder="Ex.: Princípios e Diretrizes da PC">
+        </div>
+        <div class="field">
+          <label for="st-data">Data</label>
+          <input type="date" id="st-data">
+        </div>
+        <div class="field">
+          <label for="st-qtd">Nº de questões</label>
+          <input type="number" id="st-qtd" class="qty-input" min="1" step="1" inputmode="numeric" placeholder="0">
+        </div>
+      </div>
+      <p class="form-error hidden" id="stat-error"></p>
+      <div class="form-actions">
+        <button class="btn btn-ghost hidden" id="st-cancel" onclick="resetStatForm()">Cancelar edição</button>
+        <button class="btn btn-primary" id="st-save" onclick="saveStat()">Salvar registro</button>
+      </div>
+    </div>
+    <div class="chip-row" id="materia-totals" style="margin:20px 0 14px"></div>
+    <div id="stat-list"></div>
+  </section>
+
+  <!-- ============ LIXEIRA ============ -->
+  <section id="screen-trash" class="hidden">
+    <div class="trash-head">
+      <p class="home-intro" style="margin-bottom:0">Itens excluídos ficam guardados aqui — restaure quando quiser ou exclua definitivamente.</p>
+      <button class="btn btn-red btn-sm hidden" id="empty-trash" onclick="emptyTrash()">Esvaziar lixeira</button>
+    </div>
+    <div class="trash-section">
+      <h3>Quizzes excluídos</h3>
+      <div id="trash-quizzes"></div>
+    </div>
+    <div class="trash-section">
+      <h3>Registros de questões excluídos</h3>
+      <div id="trash-stats"></div>
+    </div>
+  </section>
+
+  <!-- ============ BACKUP ============ -->
+  <section id="screen-backup" class="hidden">
+    <p class="home-intro">Guarde uma cópia de segurança de tudo — quizzes, menus, anotações, estatísticas, metas, lixeira e até o progresso dos quizzes em andamento — e restaure quando precisar.</p>
+
+    <div class="card form-card">
+      <h2>⬇ Exportar backup</h2>
+      <p class="hint" style="margin-top:-8px">Gera um arquivo com todos os seus dados atuais. Guarde-o em um lugar seguro (e-mail, nuvem, pendrive).</p>
+      <div class="form-actions" style="justify-content:flex-start">
+        <button class="btn btn-primary" onclick="downloadBackup()">Baixar arquivo .json</button>
+        <button class="btn btn-ghost" onclick="showBackupText()">Ver / copiar código</button>
+      </div>
+      <div class="hidden" id="backup-out">
+        <div class="field">
+          <label>Código do backup <span class="opt">(selecione tudo e copie)</span></label>
+          <textarea id="backup-text" readonly class="code-area"></textarea>
+        </div>
+        <div class="form-actions" style="justify-content:flex-start">
+          <button class="btn btn-ghost btn-sm" id="copy-btn" onclick="copyBackup()">Copiar código</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card form-card" style="margin-top:16px">
+      <h2>⬆ Importar backup</h2>
+      <p class="hint" style="margin-top:-8px">Restaura um backup exportado anteriormente. Atenção: os dados atuais serão substituídos pelos do backup.</p>
+      <div class="field">
+        <label for="import-file">Arquivo .json do backup</label>
+        <input type="file" id="import-file" accept=".json,application/json">
+      </div>
+      <div class="field">
+        <label for="import-text">Ou cole aqui o código do backup</label>
+        <textarea id="import-text" class="code-area" placeholder='{"app":"gameover","data":{...}}'></textarea>
+      </div>
+      <p class="form-error hidden" id="import-error"></p>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="importBackup()">Importar e substituir</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section id="screen-quiz" class="hidden">
+    <button class="back" onclick="exitQuiz()">← Sair do quiz</button>
+    <div class="quiz-top">
+      <h2 id="quiz-title"></h2>
+      <div class="quiz-top-right">
+        <button class="btn btn-ghost btn-sm" onclick="jumpTo()" title="Ir para uma pergunta específica">Ir para nº</button>
+        <span class="counter" id="quiz-counter"></span>
+      </div>
+    </div>
+    <div class="progress"><div id="quiz-bar" style="width:0%"></div></div>
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="card qcard">
+      <p class="eyebrow" id="q-eyebrow">A qual grupo pertence este inciso?</p>
+      <p class="inciso" id="inciso-text"></p>
+      <div class="answers" id="answers"></div>
+      <div class="feedback hidden" id="feedback">
+        <p class="verdict" id="fb-verdict"></p>
+        <p class="where" id="fb-where"></p>
+        <div class="feedback-actions">
+          <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()">Próximo →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section id="screen-results" class="hidden">
+    <div class="card res-card">
+      <p class="eyebrow" style="margin-bottom:10px">Resultado</p>
+      <p class="res-score" id="res-score"></p>
+      <p class="res-sub" id="res-sub"></p>
+      <div><span class="res-grade"><span class="glabel">Nota final</span><span class="gval" id="res-grade"></span><span class="gmax">/ 10</span></span></div>
+      <p class="res-concept" id="res-concept"></p>
+      <div class="res-breakdown" id="res-breakdown"></div>
+    </div>
+    <div class="res-actions">
+      <button class="btn btn-primary" id="res-redo" onclick="startQuiz(state.quizId)">Refazer tudo</button>
+      <button class="btn btn-ghost hidden" id="redo-errors" onclick="redoErrors()">Refazer só os erros</button>
+      <button class="btn btn-ghost" onclick="goHome()">Início</button>
+    </div>
+    <div class="err-review hidden" id="err-review">
+      <h3>Revise os que você errou</h3>
+      <div id="err-list"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* =================== dados =================== */
+const CAT_COLORS=['cat0','cat1','cat2','cat3'];
+const ROMANS=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX','XXI','XXII','XXIII','XXIV','XXV'];
+
+const SAMPLE_QUIZ={
+  id:'sample-policia-civil',
+  name:'Princípios × Diretrizes da Polícia Civil',
+  law:'Lei Orgânica Nacional das Polícias Civis',
+  desc:'Arts. 4º e 5º',
+  notes:'',
+  categories:[
+    {name:'Princípios', label:'Art. 4º'},
+    {name:'Diretrizes', label:'Art. 5º'}
+  ],
+  items:[
+    {c:0,n:'I',t:'proteção da dignidade humana e dos direitos fundamentais no âmbito da investigação criminal'},
+    {c:0,n:'II',t:'discrição e preservação do sigilo necessário à efetividade da investigação e à salvaguarda da intimidade das pessoas'},
+    {c:0,n:'III',t:'hierarquia e disciplina'},
+    {c:0,n:'IV',t:'participação e interação comunitária'},
+    {c:0,n:'V',t:'resolução pacífica de conflitos'},
+    {c:0,n:'VI',t:'lealdade e ética'},
+    {c:0,n:'VII',t:'busca da verdade real'},
+    {c:0,n:'VIII',t:'livre convencimento técnico-jurídico do delegado de polícia'},
+    {c:0,n:'IX',t:'controle de legalidade dos atos policiais civis'},
+    {c:0,n:'X',t:'uso diferenciado da força para preservação da vida, redução do sofrimento e redução de danos'},
+    {c:0,n:'XI',t:'continuidade investigativa criminal'},
+    {c:0,n:'XII',t:'atuação imparcial na condução da atividade investigativa e de polícia judiciária'},
+    {c:0,n:'XIII',t:'política de gestão direcionada à proteção e à valorização dos seus integrantes'},
+    {c:0,n:'XIV',t:'unidade de doutrina e uniformidade de procedimento'},
+    {c:0,n:'XV',t:'autonomia, imparcialidade, tecnicidade e cientificidade investigativa, indiciatória, inquisitória, notarial e pericial'},
+    {c:0,n:'XVI',t:'essencialidade da investigação policial para a persecução penal'},
+    {c:0,n:'XVII',t:'natureza técnica e imparcial das funções de polícia judiciária civil e de apuração de infrações penais, sob a presidência e mediante análise técnico-jurídica do delegado de polícia'},
+    {c:0,n:'XVIII',t:'identidade de nomenclatura para unidades policiais, serviços e cargos de igual natureza'},
+    {c:0,n:'XIX',t:'transição da gestão da Delegacia-Geral de Polícia Civil, de forma a não prejudicar a continuidade dos serviços'},
+    {c:1,n:'I',t:'planejamento e distribuição do efetivo policial, por resolução do Conselho Superior de Polícia Civil, proporcionalmente ao número de habitantes, à extensão territorial e aos índices de criminalidade da circunscrição'},
+    {c:1,n:'II',t:'observância de caráter técnico, científico e jurídico na análise criminal da investigação policial'},
+    {c:1,n:'III',t:'promoção da produção de conhecimento sobre segurança pública com base técnica e científica'},
+    {c:1,n:'IV',t:'atuação especializada e qualificada direcionada à eficiência na repressão e na apuração das infrações penais'},
+    {c:1,n:'V',t:'ênfase na repressão qualificada aos crimes hediondos e equiparados, à corrupção, à lavagem de dinheiro, ao tráfico de drogas, ao crime organizado, aos crimes cibernéticos e aos crimes contra a vida, a administração pública e a liberdade'},
+    {c:1,n:'VI',t:'cooperação e compartilhamento das experiências entre os órgãos de segurança pública, mediante instrumentos próprios, na forma da lei'},
+    {c:1,n:'VII',t:'integração ao sistema de segurança pública com instituição de mecanismos de governança'},
+    {c:1,n:'VIII',t:'gestão da proteção e compartilhamento de seus bancos de dados e demais sistemas de informação'},
+    {c:1,n:'X',t:'utilização dos meios tecnológicos disponíveis e atualização e melhorias permanentes das metodologias de trabalho, para aprimoramento nos processos de investigação'},
+    {c:1,n:'XI',t:'atendimento imediato e permanente ao cidadão e à sociedade'},
+    {c:1,n:'XII',t:'planejamento estratégico e sistêmico'},
+    {c:1,n:'XIII',t:'cooperação com a sociedade e com os órgãos do sistema de segurança pública e de justiça criminal'},
+    {c:1,n:'XIV',t:'padronização da doutrina, dos procedimentos operacionais, formais e administrativos, da comunicação social e da identidade visual e funcional'},
+    {c:1,n:'XVI',t:'fomento à divulgação, de caráter educativo ou informativo, por todos os seus integrantes, das missões, das atribuições e dos valores da polícia civil, a fim de promover aproximação com a população, observado, em quaisquer situações, o decoro na exposição de emblemas, brasões, patrimônio ou insígnias institucionais'},
+    {c:1,n:'XVII',t:'instituição de programas e de projetos vinculados às políticas públicas e aos planos nacional e estadual de segurança pública, no âmbito de suas competências'},
+    {c:1,n:'XVIII',t:'capacitação profissional continuada, integrada e isonômica, com os custos sob a responsabilidade do órgão policial'},
+    {c:1,n:'XIX',t:'atuação direcionada à identificação e à recuperação de bens, valores e direitos'},
+    {c:1,n:'XX',t:'avaliação anual de desempenho individual e de produtividade institucional'},
+    {c:1,n:'XXI',t:'edição de atos administrativos normativos no âmbito de suas atribuições constitucionais e legais'}
+  ]
+};
+
+/* =================== persistência =================== */
+const KEY_QUIZZES='leiquiz:quizzes', KEY_SCORES='leiquiz:scores', KEY_SEEDED='leiquiz:seeded', KEY_MENUS='leiquiz:menus', KEY_SESSIONS='leiquiz:sessions', KEY_STATS='leiquiz:stats', KEY_TRASH='leiquiz:trash', KEY_GOALS='leiquiz:goals';
+let quizzes=[], bestScores={}, menus=[], sessions={}, stats=[], goals=[], trash={quizzes:[],stats:[]}, activeMenu='all', storageOk=true;
+
+async function sGet(k){ try{ const r=await window.storage.get(k); return r?r.value:null; }catch(e){ return null; } }
+async function sSet(k,v){ try{ await window.storage.set(k,v); return true; }catch(e){ storageOk=false; return false; } }
+
+async function loadData(){
+  const q=await sGet(KEY_QUIZZES);
+  if(q){ try{ quizzes=JSON.parse(q); }catch(e){} }
+  const s=await sGet(KEY_SCORES);
+  if(s){ try{ bestScores=JSON.parse(s); }catch(e){} }
+  const m=await sGet(KEY_MENUS);
+  if(m){ try{ menus=JSON.parse(m); }catch(e){} }
+  const ss=await sGet(KEY_SESSIONS);
+  if(ss){ try{ sessions=JSON.parse(ss); }catch(e){} }
+  const st=await sGet(KEY_STATS);
+  if(st){ try{ stats=JSON.parse(st); }catch(e){} }
+  const tr=await sGet(KEY_TRASH);
+  if(tr){ try{ const t=JSON.parse(tr); trash={quizzes:t.quizzes||[],stats:t.stats||[]}; }catch(e){} }
+  const g=await sGet(KEY_GOALS);
+  if(g){ try{ goals=JSON.parse(g); }catch(e){} }
+  /* migração: quizzes antigos sem lei/anotações/menu */
+  quizzes.forEach(z=>{ if(z.law==null)z.law=''; if(z.notes==null)z.notes=''; if(z.menuId===undefined)z.menuId=null; });
+  /* semeia o quiz de exemplo apenas na primeira vez */
+  const seeded=await sGet(KEY_SEEDED);
+  if(!seeded && !quizzes.some(z=>z.id===SAMPLE_QUIZ.id)){
+    quizzes.unshift(JSON.parse(JSON.stringify(SAMPLE_QUIZ)));
+    await persistQuizzes();
+    await sSet(KEY_SEEDED,'1');
+  }
+}
+async function persistQuizzes(){ await sSet(KEY_QUIZZES,JSON.stringify(quizzes)); }
+async function persistScores(){ await sSet(KEY_SCORES,JSON.stringify(bestScores)); }
+async function persistMenus(){ await sSet(KEY_MENUS,JSON.stringify(menus)); }
+async function persistSessions(){ await sSet(KEY_SESSIONS,JSON.stringify(sessions)); }
+async function persistStats(){ await sSet(KEY_STATS,JSON.stringify(stats)); }
+async function persistTrash(){ await sSet(KEY_TRASH,JSON.stringify(trash)); }
+async function persistGoals(){ await sSet(KEY_GOALS,JSON.stringify(goals)); }
+function getQuiz(id){ return quizzes.find(q=>q.id===id); }
+
+/* =================== navegação =================== */
+const screens=['home','editor','quiz','results','stats','trash','backup'];
+function show(name){
+  screens.forEach(s=>document.getElementById('screen-'+s).classList.toggle('hidden',s!==name));
+  document.getElementById('nav-quiz').classList.toggle('active',!['stats','trash','backup'].includes(name));
+  document.getElementById('nav-stats').classList.toggle('active',name==='stats');
+  document.getElementById('nav-trash').classList.toggle('active',name==='trash');
+  document.getElementById('nav-backup').classList.toggle('active',name==='backup');
+  window.scrollTo({top:0});
+}
+function goHome(){ renderHome(); show('home'); }
+function esc(s){ const d=document.createElement('div'); d.textContent=s==null?'':s; return d.innerHTML.replace(/"/g,'&quot;'); }
+
+/* =================== modais =================== */
+function openModal({title,message,input,placeholder,value,okText='OK',cancelText,danger}){
+  return new Promise(res=>{
+    const ov=document.createElement('div');
+    ov.className='modal-overlay';
+    ov.innerHTML=`<div class="card modal" role="dialog" aria-modal="true">
+      ${title?`<h3>${esc(title)}</h3>`:''}
+      ${message?`<p class="mmsg">${esc(message)}</p>`:''}
+      ${input?`<input type="text" class="minput" placeholder="${esc(placeholder||'')}" value="${esc(value||'')}">`:''}
+      <div class="mactions">
+        ${cancelText?`<button class="btn btn-ghost" data-a="cancel">${esc(cancelText)}</button>`:''}
+        <button class="btn ${danger?'btn-red':'btn-primary'}" data-a="ok">${esc(okText)}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    const inp=ov.querySelector('.minput');
+    const done=v=>{ ov.remove(); res(v); };
+    ov.querySelector('[data-a="ok"]').onclick=()=>done(input?(inp.value||'').trim():true);
+    const c=ov.querySelector('[data-a="cancel"]');
+    if(c) c.onclick=()=>done(input?null:false);
+    ov.addEventListener('mousedown',e=>{ if(e.target===ov) done(input?null:false); });
+    ov.addEventListener('keydown',e=>{
+      if(e.key==='Escape') done(input?null:false);
+      else if(e.key==='Enter'&&input){ e.preventDefault(); done((inp.value||'').trim()); }
+      e.stopPropagation();
+    });
+    if(inp){ inp.focus(); inp.select(); } else ov.querySelector('[data-a="ok"]').focus();
+  });
+}
+const modalPrompt=(title,placeholder,value,okText='Salvar')=>openModal({title,input:true,placeholder,value,okText,cancelText:'Cancelar'});
+const modalConfirm=(message,okText='Confirmar')=>openModal({title:'Tem certeza?',message,okText,cancelText:'Cancelar',danger:true});
+const modalAlert=(message)=>openModal({title:'Aviso',message,okText:'Entendi'});
+
+/* =================== home =================== */
+function menuName(id){ const m=menus.find(x=>x.id===id); return m?m.name:null; }
+
+/* cards recolhidos por padrão: clique no nome expande */
+const expandedQuizzes=new Set();
+function toggleQuiz(id){
+  if(expandedQuizzes.has(id)) expandedQuizzes.delete(id);
+  else expandedQuizzes.add(id);
+  renderHome();
+}
+
+function renderMenuBar(){
+  const bar=document.getElementById('menu-bar');
+  const actions=document.getElementById('menu-actions');
+  /* se o menu ativo foi excluído, volta para "Todos" */
+  if(activeMenu!=='all'&&activeMenu!=='none'&&!menus.find(m=>m.id===activeMenu)) activeMenu='all';
+  const unassigned=quizzes.filter(q=>!q.menuId).length;
+  let html=`<button class="mtab ${activeMenu==='all'?'active':''}" onclick="setMenu('all')">Todos<span class="count">${quizzes.length}</span></button>`;
+  menus.forEach(m=>{
+    const n=quizzes.filter(q=>q.menuId===m.id).length;
+    html+=`<button class="mtab ${activeMenu===m.id?'active':''}" data-mid="${m.id}" title="Clique para abrir · arraste para reordenar" onclick="setMenu('${m.id}')">${esc(m.name)}<span class="count">${n}</span></button>`;
+  });
+  if(menus.length>0&&unassigned>0){
+    html+=`<button class="mtab ${activeMenu==='none'?'active':''}" onclick="setMenu('none')">Sem menu<span class="count">${unassigned}</span></button>`;
+  }
+  html+=`<button class="mtab new-menu" onclick="createMenu()">+ Novo menu</button>`;
+  bar.innerHTML=html;
+
+  if(activeMenu!=='all'&&activeMenu!=='none'){
+    actions.classList.remove('hidden');
+    actions.innerHTML=`<span class="eyebrow">Menu selecionado</span>
+      <button onclick="renameMenu('${activeMenu}')">Renomear</button>
+      <button class="del-menu" onclick="deleteMenu('${activeMenu}')">Excluir menu</button>`;
+  } else {
+    actions.classList.add('hidden');
+    actions.innerHTML='';
+  }
+}
+
+function setMenu(id){ activeMenu=id; renderHome(); }
+
+async function createMenu(assignQuizId){
+  const name=await modalPrompt('Novo menu','Ex.: Lei Orgânica da PC, Direito Penal…');
+  if(!name){ renderHome(); return; }
+  const m={id:'m'+Date.now(),name};
+  menus.push(m);
+  if(assignQuizId){
+    const q=getQuiz(assignQuizId);
+    if(q){ q.menuId=m.id; await persistQuizzes(); }
+  } else {
+    activeMenu=m.id;
+  }
+  await persistMenus();
+  renderHome();
+}
+
+async function renameMenu(id){
+  const m=menus.find(x=>x.id===id); if(!m) return;
+  const name=await modalPrompt('Renomear menu','Novo nome do menu',m.name);
+  if(!name) return;
+  m.name=name;
+  await persistMenus();
+  renderHome();
+}
+
+async function deleteMenu(id){
+  const m=menus.find(x=>x.id===id); if(!m) return;
+  const n=quizzes.filter(q=>q.menuId===id).length;
+  if(!await modalConfirm(`Excluir o menu "${m.name}"?${n>0?` Os ${n} quizzes dele não serão apagados — apenas ficarão sem menu.`:''}`,'Excluir menu')) return;
+  menus=menus.filter(x=>x.id!==id);
+  quizzes.forEach(q=>{ if(q.menuId===id) q.menuId=null; });
+  activeMenu='all';
+  await persistMenus(); await persistQuizzes();
+  renderHome();
+}
+
+async function assignQuiz(quizId,value){
+  if(value==='__new__'){ await createMenu(quizId); return; }
+  const q=getQuiz(quizId); if(!q) return;
+  q.menuId=value||null;
+  await persistQuizzes();
+  renderHome();
+}
+
+function renderHome(){
+  renderMenuBar();
+  const list=document.getElementById('quiz-list');
+  list.innerHTML='';
+  let visible=quizzes;
+  if(activeMenu==='none') visible=quizzes.filter(q=>!q.menuId);
+  else if(activeMenu!=='all') visible=quizzes.filter(q=>q.menuId===activeMenu);
+  if(quizzes.length===0){
+    list.innerHTML='<div class="card quiz-item"><p class="desc">Nenhum quiz por aqui. Crie o primeiro ou restaure o quiz de exemplo abaixo.</p></div>';
+  } else if(visible.length===0){
+    list.innerHTML='<div class="card empty-menu">Nenhum quiz neste menu ainda. Use o seletor “Menu” em um card para trazê-lo para cá.</div>';
+  }
+  visible.forEach(q=>{
+    const sess=sessions[q.id];
+    const sessOk=sess&&sessionValid(q,sess);
+    const done=sessOk?sess.results.filter(r=>r).length:0;
+    const hasProgress=sessOk&&done>0&&done<q.items.length;
+    const playBtns=hasProgress
+      ?`<button class="btn btn-ghost btn-sm" onclick="startQuiz('${q.id}')">Recomeçar</button>
+        <button class="btn btn-primary" onclick="resumeQuiz('${q.id}')">Continuar ${done}/${q.items.length}</button>`
+      :`<button class="btn btn-primary" onclick="startQuiz('${q.id}')">Estudar</button>`;
+    const el=document.createElement('div');
+    el.className='card quiz-item';
+    const chips=q.categories.map((c,i)=>{
+      const col=CAT_COLORS[i%CAT_COLORS.length];
+      return `<span class="chip" style="background:var(--${col}-soft);color:var(--${col})">${esc(c.name)}${c.label?' · '+esc(c.label):''}</span>`;
+    }).join('');
+    const best=bestScores[q.id]!=null?`<span class="best">Melhor resultado: <b>${bestScores[q.id]}%</b></span>`:'<span class="best">Ainda não estudado</span>';
+    const open=expandedQuizzes.has(q.id);
+    el.innerHTML=`
+      <button class="quiz-toggle" onclick="toggleQuiz('${q.id}')" aria-expanded="${open}" title="${open?'Recolher':'Ver detalhes'}">
+        <div class="thead">
+          ${q.law?`<span class="law">§ ${esc(q.law)}</span>`:''}
+          <h3>${esc(q.name)}</h3>
+        </div>
+        <span class="chev ${open?'open':''}">▾</span>
+      </button>
+      ${open?`<div class="quiz-body">
+        ${q.desc?`<p class="desc">${esc(q.desc)}</p>`:''}
+        <div class="chip-row">${chips}<span class="chip" style="background:var(--paper);color:var(--ink-soft)">${q.items.length} incisos</span></div>
+        ${q.notes?`<div class="note-box"><span class="eyebrow">Suas anotações</span>${esc(q.notes)}</div>`:''}
+        <div class="quiz-item-foot">
+          ${hasProgress?`<span class="best">Em andamento: <b>${done}/${q.items.length}</b> respondidas</span>`:best}
+          <div class="row-actions">
+            <label class="menu-select">Menu
+              <select onchange="assignQuiz('${q.id}',this.value)" aria-label="Mover quiz para um menu">
+                <option value="" ${!q.menuId?'selected':''}>Sem menu</option>
+                ${menus.map(m=>`<option value="${m.id}" ${q.menuId===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}
+                <option value="__new__">+ Criar novo menu…</option>
+              </select>
+            </label>
+            <button class="btn btn-ghost btn-sm" onclick="openEditor('${q.id}')">✎ Editar</button>
+            ${playBtns}
+          </div>
+        </div>
+      </div>`:''}`;
+    list.appendChild(el);
+  });
+  const ra=document.getElementById('restore-area');
+  ra.innerHTML=quizzes.some(z=>z.id===SAMPLE_QUIZ.id)?'':'<button class="restore" onclick="restoreSample()">Restaurar quiz de exemplo (Polícia Civil)</button>';
+}
+
+async function restoreSample(){
+  quizzes.unshift(JSON.parse(JSON.stringify(SAMPLE_QUIZ)));
+  await persistQuizzes();
+  renderHome();
+}
+
+/* =================== editor =================== */
+let draft=null; /* {id|null, name, law, desc, notes, categories:[{name,label,items:[{n,t}]}]} */
+
+function toDraft(q){
+  return {
+    id:q.id, name:q.name, law:q.law||'', desc:q.desc||'', notes:q.notes||'',
+    categories:q.categories.map((c,ci)=>({
+      name:c.name, label:c.label||'', _open:false, /* quiz salvo abre com categorias recolhidas */
+      items:q.items.filter(it=>it.c===ci).map(it=>it.k==='p'?{n:it.n||'único',t:it.t,k:'p'}:{n:it.n||'',t:it.t})
+    }))
+  };
+}
+function emptyDraft(){
+  return {id:null,name:'',law:'',desc:'',notes:'',
+    categories:[{name:'',label:'',items:[{n:'I',t:''}]},{name:'',label:'',items:[{n:'I',t:''}]}]};
+}
+
+function openEditor(id){
+  draft=id?toDraft(getQuiz(id)):emptyDraft();
+  document.getElementById('editor-title').textContent=id?'Editar quiz':'Novo quiz';
+  document.getElementById('f-name').value=draft.name;
+  document.getElementById('f-law').value=draft.law;
+  document.getElementById('f-desc').value=draft.desc;
+  document.getElementById('f-notes').value=draft.notes;
+  document.getElementById('form-error').classList.add('hidden');
+  document.getElementById('editor-delete').classList.toggle('hidden',!id);
+  renderCats();
+  show('editor');
+}
+function cancelEditor(){ draft=null; goHome(); }
+
+function syncMeta(){
+  draft.name=document.getElementById('f-name').value.trim();
+  draft.law=document.getElementById('f-law').value.trim();
+  draft.desc=document.getElementById('f-desc').value.trim();
+  draft.notes=document.getElementById('f-notes').value.trim();
+}
+
+function toggleCat(ci){
+  syncMeta();
+  draft.categories[ci]._open=!(draft.categories[ci]._open!==false);
+  renderCats();
+}
+
+function nextNumeral(cat){
+  const used=cat.items.map(it=>(it.n||'').toUpperCase());
+  for(const r of ROMANS){ if(!used.includes(r)) return r; }
+  return '';
+}
+
+function renderCats(){
+  const c=document.getElementById('cat-container');
+  c.innerHTML='';
+  draft.categories.forEach((cat,ci)=>{
+    const col=CAT_COLORS[ci%CAT_COLORS.length];
+    const block=document.createElement('div');
+    block.className='cat-block';
+    block.style.borderLeftColor=`var(--${col})`;
+    const rows=cat.items.map((it,ii)=>`
+      <div class="item-row">
+        ${it.k==='p'
+          ?`<div class="pgrp"><span class="psym">§</span><input class="num pnum" type="text" value="${esc(it.n)}" placeholder="único" title="Parágrafo: use “único”, “1º”, “2º”…" aria-label="Número do parágrafo"
+              oninput="draft.categories[${ci}].items[${ii}].n=this.value"></div>`
+          :`<input class="num" type="text" value="${esc(it.n)}" placeholder="nº" aria-label="Numeral do inciso"
+              oninput="draft.categories[${ci}].items[${ii}].n=this.value">`}
+        <textarea class="itxt" rows="1" placeholder="${it.k==='p'?'Texto do parágrafo':'Texto do inciso'}"
+          oninput="draft.categories[${ci}].items[${ii}].t=this.value; autoGrow(this)">${esc(it.t)}</textarea>
+        <button class="del" title="Remover" aria-label="Remover" onclick="removeItem(${ci},${ii})">×</button>
+      </div>`).join('');
+    const nP=cat.items.filter(it=>it.k==='p').length;
+    const nI=cat.items.length-nP;
+    const countTxt=`${nI} ${nI===1?'inciso':'incisos'}${nP?` · ${nP} ${nP===1?'parágrafo':'parágrafos'}`:''}`;
+    const open=cat._open!==false;
+    block.innerHTML=`
+      <div class="cat-head">
+        <button class="cat-toggle" onclick="toggleCat(${ci})" aria-expanded="${open}" title="${open?'Recolher categoria':'Abrir categoria'}">
+          <span class="chev ${open?'open':''}">▾</span>
+          <span class="eyebrow" style="color:var(--${col})">Categoria ${ci+1}</span>
+          <span class="cat-preview">${esc(cat.name||'(sem nome)')}${cat.label?' · '+esc(cat.label):''}</span>
+          <span class="cat-count">${countTxt}</span>
+        </button>
+        ${draft.categories.length>2?`<button class="btn btn-danger btn-sm" onclick="removeCategory(${ci})">Remover</button>`:''}
+      </div>
+      ${open?`
+      <div class="cat-grid">
+        <div class="field">
+          <label>Nome do grupo</label>
+          <input type="text" value="${esc(cat.name)}" placeholder="Ex.: Princípios" oninput="draft.categories[${ci}].name=this.value">
+        </div>
+        <div class="field">
+          <label>Referência <span class="opt">(ex.: Art. 4º)</span></label>
+          <input type="text" value="${esc(cat.label)}" placeholder="Ex.: Art. 4º" oninput="draft.categories[${ci}].label=this.value">
+        </div>
+      </div>
+      <div class="item-list">${rows}</div>
+      <div class="cat-tools">
+        <button class="btn btn-ghost btn-sm" onclick="addItem(${ci})">+ Inciso</button>
+        <button class="btn btn-ghost btn-sm" onclick="addParagraph(${ci})">+ Parágrafo único</button>
+      </div>
+      <details class="bulk">
+        <summary>Colar vários incisos de uma vez</summary>
+        <div class="inner">
+          <textarea placeholder="Cole aqui, um por linha. Numerais como “IV -”, “Parágrafo único.” e “§ 1º” são reconhecidos automaticamente." data-bulk="${ci}"></textarea>
+          <div><button class="btn btn-ghost btn-sm" onclick="bulkAdd(${ci},this)">Adicionar à categoria</button></div>
+        </div>
+      </details>`:''}`;
+    c.appendChild(block);
+    block.querySelectorAll('textarea.itxt').forEach(autoGrow);
+  });
+  document.getElementById('add-cat').classList.toggle('hidden',draft.categories.length>=4);
+}
+
+function autoGrow(el){ el.style.height='auto'; el.style.height=(el.scrollHeight+2)+'px'; }
+
+function addCategory(){
+  if(draft.categories.length>=4) return;
+  syncMeta();
+  draft.categories.push({name:'',label:'',items:[{n:'I',t:''}]});
+  renderCats();
+}
+async function removeCategory(ci){
+  const cat=draft.categories[ci];
+  const filled=cat.items.filter(it=>it.t.trim()).length;
+  if(filled>0 && !await modalConfirm(`Remover a categoria "${cat.name||'sem nome'}" e seus ${filled} incisos?`,'Remover')) return;
+  syncMeta();
+  draft.categories.splice(ci,1);
+  renderCats();
+}
+function addItem(ci){
+  syncMeta();
+  const cat=draft.categories[ci];
+  cat.items.push({n:nextNumeral(cat),t:''});
+  renderCats();
+  const rows=document.querySelectorAll('#cat-container .cat-block')[ci].querySelectorAll('.item-row');
+  const last=rows[rows.length-1];
+  if(last) last.querySelector('textarea.itxt').focus();
+}
+async function removeItem(ci,ii){
+  const it=draft.categories[ci].items[ii];
+  if(it.t.trim() && !await modalConfirm('Remover este inciso?\n\n“'+it.t.trim().slice(0,120)+(it.t.trim().length>120?'…':'')+'”','Remover')) return;
+  syncMeta();
+  draft.categories[ci].items.splice(ii,1);
+  renderCats();
+}
+
+function addParagraph(ci){
+  syncMeta();
+  const cat=draft.categories[ci];
+  cat.items.push({n:'único',t:'',k:'p'});
+  renderCats();
+  const rows=document.querySelectorAll('#cat-container .cat-block')[ci].querySelectorAll('.item-row');
+  const last=rows[rows.length-1];
+  if(last) last.querySelector('textarea.itxt').focus();
+}
+
+function parseLines(text){
+  return text.split('\n').map(l=>l.trim()).filter(Boolean).map(line=>{
+    let n='', k;
+    const pu=line.match(/^par[áa]grafo\s+único\s*[-–—.:]*\s*/i);
+    const pn=pu?null:line.match(/^§\s*([\d]+\s*[ºo°]?)\s*[-–—.:]*\s*/i);
+    const m=(pu||pn)?null:line.match(/^([IVXLCDM]+|\d+)\s*[-–—.)°º]*\s+/i);
+    if(pu){ k='p'; n='único'; line=line.slice(pu[0].length); }
+    else if(pn){ k='p'; n=pn[1].replace(/\s+/g,'').replace(/[o°]$/,'º'); line=line.slice(pn[0].length); }
+    else if(m){ n=m[1].toUpperCase(); line=line.slice(m[0].length); }
+    line=line.replace(/;\s*e\s*$/i,'').replace(/[;.,]+\s*$/,'').trim();
+    return k?{n,t:line,k}:{n,t:line};
+  }).filter(it=>it.t.length>0);
+}
+
+function bulkAdd(ci,btn){
+  const ta=document.querySelector(`textarea[data-bulk="${ci}"]`);
+  const parsed=parseLines(ta.value);
+  if(parsed.length===0){ ta.value=''; return; }
+  syncMeta();
+  const cat=draft.categories[ci];
+  cat.items=cat.items.filter(it=>it.t.trim()); /* limpa linhas vazias */
+  parsed.forEach(p=>cat.items.push(p.k==='p'?{n:p.n||'único',t:p.t,k:'p'}:{n:p.n||nextNumeral(cat),t:p.t}));
+  renderCats();
+}
+
+async function saveEditor(){
+  syncMeta();
+  const errEl=document.getElementById('form-error');
+  const cats=draft.categories.map(c=>({
+    name:c.name.trim(), label:c.label.trim(),
+    items:c.items.map(it=>it.k==='p'?{n:(it.n||'único').trim()||'único',t:it.t.trim(),k:'p'}:{n:it.n.trim(),t:it.t.trim()}).filter(it=>it.t)
+  }));
+  let error=null;
+  if(!draft.name) error='Dê um nome ao quiz.';
+  else if(cats.length<2) error='O quiz precisa de pelo menos 2 categorias.';
+  else if(cats.some(c=>!c.name)) error='Toda categoria precisa de um nome.';
+  else if(cats.some(c=>c.items.length===0)) error='Toda categoria precisa de pelo menos 1 inciso preenchido.';
+  if(error){
+    errEl.textContent=error; errEl.classList.remove('hidden');
+    draft.categories.forEach(c=>c._open=true); /* abre tudo para localizar o problema */
+    renderCats();
+    errEl.scrollIntoView({block:'center'});
+    return;
+  }
+  errEl.classList.add('hidden');
+
+  const existing=draft.id?getQuiz(draft.id):null;
+  const quiz={
+    id:draft.id||('q'+Date.now()),
+    name:draft.name, law:draft.law, desc:draft.desc, notes:draft.notes,
+    /* mantém o menu ao editar; quiz novo entra no menu aberto no momento */
+    menuId:existing?(existing.menuId||null):((activeMenu!=='all'&&activeMenu!=='none')?activeMenu:null),
+    categories:cats.map(c=>({name:c.name,label:c.label})),
+    items:[]
+  };
+  cats.forEach((c,ci)=>c.items.forEach(it=>quiz.items.push(it.k==='p'?{c:ci,n:it.n,t:it.t,k:'p'}:{c:ci,n:it.n,t:it.t})));
+
+  const idx=quizzes.findIndex(q=>q.id===quiz.id);
+  if(idx>=0) quizzes[idx]=quiz; else quizzes.push(quiz);
+  await persistQuizzes();
+  if(sessions[quiz.id] && !sessionValid(quiz,sessions[quiz.id])) await clearSession(quiz.id);
+  if(!storageOk) await modalAlert('Não foi possível salvar de forma permanente neste ambiente. As mudanças valem apenas para esta sessão.');
+  draft=null;
+  goHome();
+}
+
+async function deleteFromEditor(){
+  if(!draft||!draft.id) return;
+  const q=getQuiz(draft.id); if(!q) return;
+  if(!await modalConfirm(`Mover o quiz "${draft.name||'sem nome'}" para a lixeira? Você poderá restaurá-lo depois.`,'Mover para a lixeira')) return;
+  trash.quizzes.unshift({quiz:q,deletedAt:todayISO()});
+  quizzes=quizzes.filter(x=>x.id!==draft.id);
+  delete sessions[draft.id]; /* a nota (melhor resultado) fica guardada para o caso de restauração */
+  await persistQuizzes(); await persistSessions(); await persistTrash();
+  draft=null;
+  goHome();
+}
+
+/* =================== quiz =================== */
+const state={quizId:null,quiz:null,order:[],results:[],pos:0,isSubset:false};
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ---- sessões (progresso salvo) ---- */
+function sessionValid(q,s){
+  return s && Array.isArray(s.order) && Array.isArray(s.results)
+    && s.order.length===q.items.length
+    && s.results.length===s.order.length
+    && s.order.every(i=>Number.isInteger(i)&&i>=0&&i<q.items.length)
+    && s.results.every(r=>r==null||(Number.isInteger(r.ci)&&r.ci>=0&&r.ci<q.categories.length))
+    && Number.isInteger(s.pos) && s.pos>=0 && s.pos<s.order.length;
+}
+function answeredCount(){ return state.results.filter(r=>r).length; }
+async function saveSession(){
+  if(state.isSubset) return;
+  if(answeredCount()===0) delete sessions[state.quizId];
+  else sessions[state.quizId]={order:state.order,results:state.results,pos:state.pos};
+  await persistSessions();
+}
+async function clearSession(id){ if(sessions[id]){ delete sessions[id]; await persistSessions(); } }
+
+function startQuiz(id, subset){
+  const q=getQuiz(id); if(!q) return;
+  state.quizId=id; state.quiz=q;
+  state.order=shuffle(subset?[...subset]:q.items.map((_,i)=>i));
+  state.results=new Array(state.order.length).fill(null);
+  state.pos=0;
+  state.isSubset=!!subset;
+  if(!subset) clearSession(id);
+  document.getElementById('quiz-title').textContent=q.name+(q.law?' — '+q.law:'');
+  show('quiz');
+  renderQuestion();
+}
+
+function resumeQuiz(id){
+  const q=getQuiz(id), s=sessions[id];
+  if(!q) return;
+  if(!sessionValid(q,s)){ clearSession(id); startQuiz(id); return; }
+  state.quizId=id; state.quiz=q;
+  state.order=[...s.order];
+  state.results=s.results.map(r=>r?{...r}:null);
+  state.pos=s.pos;
+  state.isSubset=false;
+  /* se a pergunta salva já foi respondida, vai para a próxima em aberto */
+  if(state.results[state.pos]){
+    const n=nextUnanswered();
+    if(n!==-1) state.pos=n;
+  }
+  document.getElementById('quiz-title').textContent=q.name+(q.law?' — '+q.law:'');
+  show('quiz');
+  renderQuestion();
+}
+
+async function exitQuiz(){
+  const total=state.order.length, done=answeredCount();
+  if(state.isSubset && done>0 && done<total){
+    if(!await modalConfirm('Sair da rodada de erros? Esse progresso não fica salvo.','Sair')) return;
+  }
+  goHome(); /* nas rodadas normais o progresso já foi salvo a cada resposta */
+}
+
+function nextUnanswered(){
+  const total=state.order.length;
+  for(let i=1;i<=total;i++){
+    const p=(state.pos+i)%total;
+    if(!state.results[p]) return p;
+  }
+  return -1;
+}
+
+function updateScoreboard(){
+  const total=state.order.length;
+  const ok=state.results.filter(r=>r&&r.ok).length;
+  const err=state.results.filter(r=>r&&!r.ok).length;
+  document.getElementById('scoreboard').innerHTML=
+    `<button class="sb ok ${ok>0?'clickable':''}" ${ok>0?'onclick="replayCorrect()"':'disabled'} title="Responder novamente só as que você acertou">✓ Acertos: ${ok}${ok>0?'<span class="redo">↻</span>':''}</button>
+     <button class="sb err ${err>0?'clickable':''}" ${err>0?'onclick="replayWrong()"':'disabled'} title="Responder novamente só as que você errou">✗ Erros: ${err}${err>0?'<span class="redo">↻</span>':''}</button>
+     <span class="sb rest">Restam: ${total-ok-err}</span>`;
+}
+
+async function replayFiltered(wantOk){
+  const idxs=[];
+  state.results.forEach((r,p)=>{ if(r&&r.ok===wantOk) idxs.push(state.order[p]); });
+  if(idxs.length===0) return;
+  const tipo=wantOk?'acertou':'errou';
+  const aviso=state.isSubset
+    ?'A rodada atual não fica salva.'
+    :'O progresso da rodada atual continua salvo — você pode retomá-la depois pelo card do quiz.';
+  if(!await modalConfirm(`Começar uma rodada só com as ${idxs.length} ${idxs.length===1?'questão':'questões'} que você ${tipo}? ${aviso}`,'Começar rodada')) return;
+  startQuiz(state.quizId,idxs);
+}
+function replayCorrect(){ replayFiltered(true); }
+function replayWrong(){ replayFiltered(false); }
+
+function renderQuestion(){
+  const q=state.quiz, idx=state.order[state.pos], item=q.items[idx];
+  const total=state.order.length;
+  updateScoreboard();
+  document.getElementById('quiz-counter').textContent=`${state.pos+1} / ${total} · ${answeredCount()} respondidas`;
+  document.getElementById('quiz-bar').style.width=(answeredCount()/total*100)+'%';
+  document.getElementById('q-eyebrow').textContent=item.k==='p'?'A qual grupo pertence este parágrafo?':'A qual grupo pertence este inciso?';
+  document.getElementById('inciso-text').textContent='“'+item.t+'”';
+  const box=document.getElementById('answers');
+  box.innerHTML='';
+  const r=state.results[state.pos];
+  q.categories.forEach((c,ci)=>{
+    const col=CAT_COLORS[ci%CAT_COLORS.length];
+    const b=document.createElement('button');
+    b.className='ans';
+    b.style.borderLeftColor=`var(--${col})`;
+    b.dataset.ci=ci;
+    b.innerHTML=`<span class="key">${ci+1}</span><span>${esc(c.name)}${c.label?`<small>${esc(c.label)}</small>`:''}</span>`;
+    if(r){
+      b.disabled=true;
+      if(ci===r.ci) b.classList.add(r.ok?'picked-ok':'picked-err');
+      if(!r.ok && ci===item.c) b.classList.add('reveal');
+    } else {
+      b.onclick=()=>answer(ci);
+    }
+    box.appendChild(b);
+  });
+  if(r) showFeedback(r,false);
+  else document.getElementById('feedback').classList.add('hidden');
+}
+
+function itemRef(cat,item){
+  let parte;
+  if(item.k==='p'){
+    const n=(item.n||'único').trim();
+    parte=n.toLowerCase()==='único'?'parágrafo único':'§ '+n;
+  } else {
+    parte='inciso '+(item.n||'—');
+  }
+  return (cat.label?cat.label+', ':'')+parte;
+}
+
+function showFeedback(r,animate){
+  const q=state.quiz, item=q.items[state.order[state.pos]];
+  const fb=document.getElementById('feedback');
+  fb.className='feedback '+(r.ok?'ok':'err');
+  document.getElementById('fb-verdict').textContent=r.ok?'Correto!':'Não foi dessa vez.';
+  const cat=q.categories[item.c];
+  const ref=itemRef(cat,item);
+  document.getElementById('fb-where').innerHTML=
+    `Este é o <span class="${animate?'mark-sweep':''}" style="${animate?'':'background:var(--hl-soft);font-weight:700'}">${esc(ref)}</span> — pertence a <b>${esc(cat.name)}</b>.`;
+  const remaining=state.order.length-answeredCount();
+  document.getElementById('next-btn').textContent=remaining>0?'Próximo →':'Ver resultado →';
+  fb.classList.remove('hidden');
+}
+
+function answer(ci){
+  if(state.results[state.pos]) return;
+  const q=state.quiz, idx=state.order[state.pos], item=q.items[idx];
+  const ok=ci===item.c;
+  state.results[state.pos]={ci,ok};
+
+  [...document.querySelectorAll('#answers .ans')].forEach(b=>{
+    b.disabled=true;
+    const bci=+b.dataset.ci;
+    if(bci===ci) b.classList.add(ok?'picked-ok':'picked-err');
+    if(!ok && bci===item.c) b.classList.add('reveal');
+  });
+
+  showFeedback(state.results[state.pos],true);
+  updateScoreboard();
+  document.getElementById('quiz-bar').style.width=(answeredCount()/state.order.length*100)+'%';
+  document.getElementById('next-btn').focus();
+  saveSession();
+}
+
+function nextQuestion(){
+  const n=nextUnanswered();
+  if(n===-1){ finishQuiz(); return; }
+  state.pos=n;
+  renderQuestion();
+  saveSession();
+}
+
+async function jumpTo(){
+  const total=state.order.length;
+  const v=await modalPrompt('Ir para a pergunta',`Número de 1 a ${total}`,'','Ir');
+  if(v==null||v==='') return;
+  const n=parseInt(v,10);
+  if(!Number.isInteger(n)||n<1||n>total){
+    await modalAlert(`Digite um número entre 1 e ${total}.`);
+    return;
+  }
+  state.pos=n-1;
+  renderQuestion();
+  saveSession();
+}
+
+async function finishQuiz(){
+  const total=state.order.length;
+  const correct=state.results.filter(r=>r&&r.ok).length;
+  const pct=Math.round(correct/total*100);
+  const perCat={};
+  state.quiz.categories.forEach((_,i)=>perCat[i]={ok:0,total:0});
+  const errors=[];
+  state.results.forEach((r,p)=>{
+    if(!r) return;
+    const it=state.quiz.items[state.order[p]];
+    perCat[it.c].total++;
+    if(r.ok) perCat[it.c].ok++;
+    else errors.push(state.order[p]);
+  });
+  state.errors=errors;
+  const nota=Math.round(correct/total*100)/10; /* 0 a 10, uma casa */
+  const notaFmt=nota.toFixed(1).replace('.',',');
+  let conceito;
+  if(pct===100) conceito='Gabaritou! Nenhum inciso escapou.';
+  else if(pct>=90) conceito='Excelente — domínio quase total.';
+  else if(pct>=70) conceito='Muito bom — falta pouco para fixar tudo.';
+  else if(pct>=50) conceito='Em evolução — revise os erros abaixo e refaça.';
+  else conceito='Hora de revisar com calma — os erros abaixo mostram por onde começar.';
+  document.getElementById('res-grade').textContent=notaFmt;
+  document.getElementById('res-concept').textContent='“'+conceito+'”';
+  document.getElementById('res-score').textContent=pct+'%';
+  document.getElementById('res-sub').textContent=`Você acertou ${correct} de ${total} incisos${errors.length>0?` e errou ${errors.length}`:''}.`;
+  const bd=document.getElementById('res-breakdown');
+  bd.innerHTML='';
+  state.quiz.categories.forEach((c,ci)=>{
+    const s=perCat[ci];
+    if(!s.total) return;
+    const col=CAT_COLORS[ci%CAT_COLORS.length];
+    bd.innerHTML+=`<div style="color:var(--${col})"><b>${s.ok}/${s.total}</b>${esc(c.name)}</div>`;
+  });
+  const hasErr=errors.length>0;
+  document.getElementById('redo-errors').classList.toggle('hidden',!hasErr);
+  document.getElementById('err-review').classList.toggle('hidden',!hasErr);
+  if(hasErr){
+    const list=document.getElementById('err-list');
+    list.innerHTML='';
+    errors.forEach(idx=>{
+      const it=state.quiz.items[idx];
+      const cat=state.quiz.categories[it.c];
+      const col=CAT_COLORS[it.c%CAT_COLORS.length];
+      const div=document.createElement('div');
+      div.className='card err-item';
+      div.innerHTML=`<p class="txt">“${esc(it.t)}”</p>
+        <p class="fix">→ <b style="background:var(--${col}-soft);color:var(--${col})">${esc(cat.name)}</b> ${esc(itemRef(cat,it))}</p>`;
+      list.appendChild(div);
+    });
+  }
+  if(!state.isSubset){
+    await clearSession(state.quizId);
+    const prev=bestScores[state.quizId];
+    if(prev==null||pct>prev){ bestScores[state.quizId]=pct; await persistScores(); }
+  }
+  show('results');
+}
+
+function redoErrors(){ startQuiz(state.quizId,[...state.errors]); }
+
+/* =================== teclado =================== */
+document.addEventListener('keydown',e=>{
+  if(document.querySelector('.modal-overlay')) return;
+  if(document.getElementById('screen-quiz').classList.contains('hidden')) return;
+  const answered=!!state.results[state.pos];
+  if(!answered && /^[1-4]$/.test(e.key)){
+    const b=document.querySelector(`#answers .ans[data-ci="${+e.key-1}"]`);
+    if(b) b.click();
+  } else if(answered && e.key==='Enter'){
+    e.preventDefault(); nextQuestion();
+  }
+});
+
+/* =================== statistics =================== */
+let editingStatId=null;
+
+function todayISO(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(iso){
+  if(!iso) return '—';
+  const [y,m,d]=iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function openStats(){
+  resetStatForm();
+  renderStats();
+  show('stats');
+}
+
+function resetStatForm(){
+  editingStatId=null;
+  document.getElementById('stat-form-title').textContent='Registrar questões';
+  document.getElementById('st-save').textContent='Salvar registro';
+  document.getElementById('st-cancel').classList.add('hidden');
+  document.getElementById('st-materia').value='';
+  document.getElementById('st-assunto').value='';
+  document.getElementById('st-data').value=todayISO();
+  document.getElementById('st-qtd').value='';
+  document.getElementById('stat-error').classList.add('hidden');
+}
+
+async function saveStat(){
+  const errEl=document.getElementById('stat-error');
+  const materia=document.getElementById('st-materia').value.trim();
+  const assunto=document.getElementById('st-assunto').value.trim();
+  const data=document.getElementById('st-data').value;
+  const qtd=parseInt(document.getElementById('st-qtd').value,10);
+  let error=null;
+  if(!materia) error='Informe a matéria.';
+  else if(!data) error='Informe a data.';
+  else if(!Number.isInteger(qtd)||qtd<1) error='Informe o número de questões (mínimo 1).';
+  if(error){ errEl.textContent=error; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+
+  if(editingStatId){
+    const s=stats.find(x=>x.id===editingStatId);
+    if(s){ s.materia=materia; s.assunto=assunto; s.data=data; s.qtd=qtd; }
+  } else {
+    stats.push({id:'s'+Date.now(),materia,assunto,data,qtd});
+  }
+  await persistStats();
+  resetStatForm();
+  renderStats();
+}
+
+async function bumpStat(id,delta){
+  const s=stats.find(x=>x.id===id); if(!s) return;
+  const novo=s.qtd+delta;
+  if(novo<1) return;
+  s.qtd=novo;
+  /* se este registro estiver carregado no formulário de edição, mantém sincronizado */
+  if(editingStatId===id) document.getElementById('st-qtd').value=novo;
+  await persistStats();
+  renderStats();
+}
+
+function editStat(id){
+  const s=stats.find(x=>x.id===id); if(!s) return;
+  editingStatId=id;
+  document.getElementById('stat-form-title').textContent='Editar registro';
+  document.getElementById('st-save').textContent='Atualizar registro';
+  document.getElementById('st-cancel').classList.remove('hidden');
+  document.getElementById('st-materia').value=s.materia;
+  document.getElementById('st-assunto').value=s.assunto||'';
+  document.getElementById('st-data').value=s.data;
+  document.getElementById('st-qtd').value=s.qtd;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function deleteStat(id){
+  const s=stats.find(x=>x.id===id); if(!s) return;
+  trash.stats.unshift({entry:s,deletedAt:todayISO()});
+  stats=stats.filter(x=>x.id!==id);
+  if(editingStatId===id) resetStatForm();
+  await persistStats(); await persistTrash();
+  renderStats();
+}
+
+function renderStats(){
+  renderGoals();
+  /* resumo */
+  const total=stats.reduce((a,s)=>a+s.qtd,0);
+  const ym=todayISO().slice(0,7);
+  const mes=stats.filter(s=>(s.data||'').startsWith(ym)).reduce((a,s)=>a+s.qtd,0);
+  const hoje=stats.filter(s=>s.data===todayISO()).reduce((a,s)=>a+s.qtd,0);
+  document.getElementById('stats-summary').innerHTML=`
+    <div class="sum-card"><b>${total}</b><span>questões no total</span></div>
+    <div class="sum-card"><b>${mes}</b><span>neste mês</span></div>
+    <div class="sum-card"><b>${hoje}</b><span>hoje</span></div>
+    <div class="sum-card"><b>${stats.length}</b><span>registros</span></div>`;
+
+  /* datalist de matérias já usadas */
+  const materias=[...new Set(stats.map(s=>s.materia))].sort((a,b)=>a.localeCompare(b));
+  document.getElementById('materias-list').innerHTML=materias.map(m=>`<option value="${esc(m)}">`).join('');
+
+  /* totais por matéria */
+  const porMateria={};
+  stats.forEach(s=>{ porMateria[s.materia]=(porMateria[s.materia]||0)+s.qtd; });
+  const mt=document.getElementById('materia-totals');
+  const keys=Object.keys(porMateria).sort((a,b)=>porMateria[b]-porMateria[a]);
+  mt.innerHTML=keys.length
+    ?keys.map((m,i)=>{
+      const col=CAT_COLORS[i%CAT_COLORS.length];
+      return `<span class="chip" style="background:var(--${col}-soft);color:var(--${col})">${esc(m)}: ${porMateria[m]}</span>`;
+    }).join('')
+    :'';
+
+  /* lista de registros (mais recentes primeiro) */
+  const list=document.getElementById('stat-list');
+  list.innerHTML='';
+  if(stats.length===0){
+    list.innerHTML='<div class="card empty-menu">Nenhum registro ainda. Preencha o formulário acima para anotar suas primeiras questões.</div>';
+    return;
+  }
+  [...stats].sort((a,b)=>(b.data||'').localeCompare(a.data||'')||b.id.localeCompare(a.id)).forEach(s=>{
+    const div=document.createElement('div');
+    div.className='card stat-entry';
+    div.innerHTML=`
+      <div class="info">
+        <span class="date">${fmtDate(s.data)}</span>
+        <span class="mat">${esc(s.materia)}</span>
+        ${s.assunto?`<span class="ass">${esc(s.assunto)}</span>`:''}
+      </div>
+      <div class="right">
+        <div class="qty-stepper">
+          <button class="step-btn minus" title="Diminuir 1 questão" aria-label="Diminuir 1 questão" ${s.qtd<=1?'disabled':''} onclick="bumpStat('${s.id}',-1)">−</button>
+          <div class="qty-badge"><b>${s.qtd}</b><span>questões</span></div>
+          <button class="step-btn plus" title="Aumentar 1 questão" aria-label="Aumentar 1 questão" onclick="bumpStat('${s.id}',1)">+</button>
+        </div>
+        <div class="acts">
+          <button onclick="editStat('${s.id}')">Editar</button>
+          <button class="d" onclick="deleteStat('${s.id}')">Excluir</button>
+        </div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+/* =================== lixeira =================== */
+function openTrash(){ renderTrash(); show('trash'); }
+
+function renderTrash(){
+  const tq=document.getElementById('trash-quizzes');
+  const ts=document.getElementById('trash-stats');
+  document.getElementById('empty-trash').classList.toggle('hidden',trash.quizzes.length===0&&trash.stats.length===0);
+
+  tq.innerHTML=trash.quizzes.length?'' :'<div class="card empty-menu">Nenhum quiz na lixeira.</div>';
+  trash.quizzes.forEach(t=>{
+    const q=t.quiz;
+    const div=document.createElement('div');
+    div.className='card trash-item';
+    div.innerHTML=`
+      <div class="info">
+        <span class="tdate">Excluído em ${fmtDate(t.deletedAt)}</span>
+        <span class="tname">${esc(q.name)}</span>
+        <span class="tmeta">${q.law?esc(q.law)+' · ':''}${q.items.length} incisos · ${q.categories.map(c=>esc(c.name)).join(' × ')}</span>
+      </div>
+      <div class="tacts">
+        <button class="btn btn-primary btn-sm" onclick="restoreQuiz('${q.id}')">Restaurar</button>
+        <button class="btn btn-ghost btn-sm btn-danger" onclick="purgeQuiz('${q.id}')">Excluir definitivamente</button>
+      </div>`;
+    tq.appendChild(div);
+  });
+
+  ts.innerHTML=trash.stats.length?'':'<div class="card empty-menu">Nenhum registro na lixeira.</div>';
+  trash.stats.forEach(t=>{
+    const s=t.entry;
+    const div=document.createElement('div');
+    div.className='card trash-item';
+    div.innerHTML=`
+      <div class="info">
+        <span class="tdate">Excluído em ${fmtDate(t.deletedAt)}</span>
+        <span class="tname">${esc(s.materia)} — ${s.qtd} questões</span>
+        <span class="tmeta">${s.assunto?esc(s.assunto)+' · ':''}feitas em ${fmtDate(s.data)}</span>
+      </div>
+      <div class="tacts">
+        <button class="btn btn-primary btn-sm" onclick="restoreStat('${s.id}')">Restaurar</button>
+        <button class="btn btn-ghost btn-sm btn-danger" onclick="purgeStat('${s.id}')">Excluir definitivamente</button>
+      </div>`;
+    ts.appendChild(div);
+  });
+}
+
+async function restoreQuiz(id){
+  const i=trash.quizzes.findIndex(t=>t.quiz.id===id); if(i<0) return;
+  const q=trash.quizzes[i].quiz;
+  if(q.menuId&&!menus.find(m=>m.id===q.menuId)) q.menuId=null; /* menu pode ter sido excluído */
+  quizzes.push(q);
+  trash.quizzes.splice(i,1);
+  await persistQuizzes(); await persistTrash();
+  renderTrash();
+}
+
+async function purgeQuiz(id){
+  const i=trash.quizzes.findIndex(t=>t.quiz.id===id); if(i<0) return;
+  if(!await modalConfirm(`Excluir definitivamente o quiz "${trash.quizzes[i].quiz.name}"? Essa ação não pode ser desfeita.`,'Excluir para sempre')) return;
+  trash.quizzes.splice(i,1);
+  delete bestScores[id];
+  await persistTrash(); await persistScores();
+  renderTrash();
+}
+
+async function restoreStat(id){
+  const i=trash.stats.findIndex(t=>t.entry.id===id); if(i<0) return;
+  stats.push(trash.stats[i].entry);
+  trash.stats.splice(i,1);
+  await persistStats(); await persistTrash();
+  renderTrash();
+}
+
+async function purgeStat(id){
+  const i=trash.stats.findIndex(t=>t.entry.id===id); if(i<0) return;
+  if(!await modalConfirm('Excluir definitivamente este registro? Essa ação não pode ser desfeita.','Excluir para sempre')) return;
+  trash.stats.splice(i,1);
+  await persistTrash();
+  renderTrash();
+}
+
+async function emptyTrash(){
+  const n=trash.quizzes.length+trash.stats.length;
+  if(!await modalConfirm(`Esvaziar a lixeira? Os ${n} itens serão excluídos definitivamente e não poderão ser recuperados.`,'Esvaziar')) return;
+  trash.quizzes.forEach(t=>delete bestScores[t.quiz.id]);
+  trash={quizzes:[],stats:[]};
+  await persistTrash(); await persistScores();
+  renderTrash();
+}
+
+/* =================== metas =================== */
+let editingGoalId=null;
+
+function openGoalForm(id){
+  editingGoalId=id||null;
+  const g=id?goals.find(x=>x.id===id):null;
+  document.getElementById('goal-form-title').textContent=g?'Editar meta':'Nova meta';
+  document.getElementById('goal-save').textContent=g?'Atualizar meta':'Salvar meta';
+  document.getElementById('g-nome').value=g?g.nome:'';
+  document.getElementById('g-target').value=g?g.target:'';
+  document.getElementById('g-inicio').value=g?g.inicio:todayISO();
+  document.getElementById('g-fim').value=g?g.fim:'';
+  document.getElementById('goal-error').classList.add('hidden');
+  document.getElementById('goal-form').classList.remove('hidden');
+  document.getElementById('g-target').focus();
+}
+function closeGoalForm(){
+  editingGoalId=null;
+  document.getElementById('goal-form').classList.add('hidden');
+}
+
+async function saveGoal(){
+  const errEl=document.getElementById('goal-error');
+  const nome=document.getElementById('g-nome').value.trim();
+  const target=parseInt(document.getElementById('g-target').value,10);
+  const inicio=document.getElementById('g-inicio').value;
+  const fim=document.getElementById('g-fim').value;
+  let error=null;
+  if(!Number.isInteger(target)||target<1) error='Informe a meta de questões (mínimo 1).';
+  else if(!inicio) error='Informe o dia do início.';
+  else if(!fim) error='Informe o dia final.';
+  else if(fim<inicio) error='O dia final precisa ser igual ou depois do dia do início.';
+  if(error){ errEl.textContent=error; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+
+  if(editingGoalId){
+    const g=goals.find(x=>x.id===editingGoalId);
+    if(g){ g.nome=nome; g.target=target; g.inicio=inicio; g.fim=fim; }
+  } else {
+    goals.push({id:'g'+Date.now(),nome,target,inicio,fim});
+  }
+  await persistGoals();
+  closeGoalForm();
+  renderStats();
+}
+
+async function deleteGoal(id){
+  const g=goals.find(x=>x.id===id); if(!g) return;
+  if(!await modalConfirm(`Excluir a meta "${g.nome||g.target+' questões'}"? Os registros de questões não são afetados.`,'Excluir meta')) return;
+  goals=goals.filter(x=>x.id!==id);
+  if(editingGoalId===id) closeGoalForm();
+  await persistGoals();
+  renderStats();
+}
+
+function goalProgress(g){
+  return stats.filter(s=>s.data>=g.inicio&&s.data<=g.fim).reduce((a,s)=>a+s.qtd,0);
+}
+
+function renderGoals(){
+  const list=document.getElementById('goal-list');
+  list.innerHTML='';
+  if(goals.length===0){
+    list.innerHTML='<div class="card empty-menu">Nenhuma meta ainda. Crie uma para acompanhar quantas questões faltam até a data final.</div>';
+    return;
+  }
+  const hoje=todayISO();
+  const MS=86400000;
+  const toDate=iso=>{ const [y,m,d]=iso.split('-').map(Number); return new Date(y,m-1,d); };
+  [...goals].sort((a,b)=>a.fim.localeCompare(b.fim)).forEach(g=>{
+    const done=goalProgress(g);
+    const left=Math.max(g.target-done,0);
+    const pct=Math.min(done/g.target*100,100);
+    const complete=done>=g.target;
+    const expired=hoje>g.fim&&!complete;
+    const notStarted=hoje<g.inicio;
+
+    let leftBadge, statusLine, pace='';
+    if(complete){
+      leftBadge=`<span class="gleft done">✓ Meta concluída!</span>`;
+      statusLine=done>g.target?`Você passou da meta em ${done-g.target} questões.`:'Parabéns, meta batida em cima!';
+    } else if(expired){
+      leftBadge=`<span class="gleft over">Faltaram ${left}</span>`;
+      statusLine='Prazo encerrado — que tal criar uma nova meta?';
+    } else {
+      leftBadge=`<span class="gleft">Faltam ${left}</span>`;
+      if(notStarted){
+        statusLine=`Começa em ${fmtDate(g.inicio)}.`;
+      } else {
+        const diasRestantes=Math.floor((toDate(g.fim)-toDate(hoje))/MS)+1;
+        const ritmo=Math.ceil(left/diasRestantes);
+        statusLine=`${diasRestantes} ${diasRestantes===1?'dia restante':'dias restantes'}`;
+        pace=`≈ ${ritmo} questões/dia para bater a meta`;
+      }
+    }
+
+    const div=document.createElement('div');
+    div.className='card goal-card';
+    div.innerHTML=`
+      <div class="goal-title">${esc(g.nome||('Meta de '+g.target+' questões'))}</div>
+      <div class="goal-period">${fmtDate(g.inicio)} → ${fmtDate(g.fim)}</div>
+      <div class="goal-nums">
+        <span class="gdone">${done}</span>
+        <span class="gtarget">/ ${g.target} questões</span>
+        ${leftBadge}
+      </div>
+      <div class="gbar"><div class="${complete?'full':''}" style="width:${pct}%"></div></div>
+      <div class="goal-meta"><span>${esc(statusLine)}</span>${pace?`<span>${esc(pace)}</span>`:''}</div>
+      <div class="goal-acts">
+        <button onclick="openGoalForm('${g.id}')">Editar</button>
+        <button class="d" onclick="deleteGoal('${g.id}')">Excluir</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+/* =================== backup =================== */
+function openBackup(){
+  document.getElementById('backup-out').classList.add('hidden');
+  document.getElementById('import-error').classList.add('hidden');
+  document.getElementById('import-text').value='';
+  document.getElementById('import-file').value='';
+  show('backup');
+}
+
+function buildBackup(){
+  return {
+    app:'gameover',
+    version:1,
+    exportedAt:new Date().toISOString(),
+    data:{ quizzes, menus, bestScores, sessions, stats, goals, trash }
+  };
+}
+
+function downloadBackup(){
+  const json=JSON.stringify(buildBackup(),null,2);
+  try{
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`gameover-backup-${todayISO()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+  }catch(e){}
+  /* fallback sempre disponível: alguns ambientes bloqueiam downloads */
+  showBackupText(json);
+}
+
+function showBackupText(json){
+  const out=document.getElementById('backup-out');
+  document.getElementById('backup-text').value=typeof json==='string'?json:JSON.stringify(buildBackup(),null,2);
+  out.classList.remove('hidden');
+}
+
+async function copyBackup(){
+  const ta=document.getElementById('backup-text');
+  const btn=document.getElementById('copy-btn');
+  let ok=false;
+  try{ await navigator.clipboard.writeText(ta.value); ok=true; }
+  catch(e){
+    try{ ta.focus(); ta.select(); ok=document.execCommand('copy'); }catch(e2){}
+  }
+  btn.textContent=ok?'✓ Copiado!':'Selecione e copie manualmente (Ctrl+C)';
+  if(!ok){ ta.focus(); ta.select(); }
+  setTimeout(()=>{ btn.textContent='Copiar código'; },2500);
+}
+
+function validateBackup(obj){
+  const d=obj&&obj.data?obj.data:obj;
+  if(!d||typeof d!=='object') return null;
+  if(!Array.isArray(d.quizzes)) return null;
+  if(!d.quizzes.every(q=>q&&typeof q.id==='string'&&typeof q.name==='string'&&Array.isArray(q.categories)&&Array.isArray(q.items))) return null;
+  return {
+    quizzes:d.quizzes,
+    menus:Array.isArray(d.menus)?d.menus:[],
+    bestScores:(d.bestScores&&typeof d.bestScores==='object')?d.bestScores:{},
+    sessions:(d.sessions&&typeof d.sessions==='object')?d.sessions:{},
+    stats:Array.isArray(d.stats)?d.stats:[],
+    goals:Array.isArray(d.goals)?d.goals:[],
+    trash:(d.trash&&typeof d.trash==='object')?{quizzes:d.trash.quizzes||[],stats:d.trash.stats||[]}:{quizzes:[],stats:[]}
+  };
+}
+
+function readImportSource(){
+  return new Promise(res=>{
+    const file=document.getElementById('import-file').files[0];
+    if(file){
+      const r=new FileReader();
+      r.onload=()=>res(r.result);
+      r.onerror=()=>res(null);
+      r.readAsText(file);
+    } else {
+      res(document.getElementById('import-text').value.trim()||null);
+    }
+  });
+}
+
+async function importBackup(){
+  const errEl=document.getElementById('import-error');
+  const raw=await readImportSource();
+  if(!raw){ errEl.textContent='Escolha um arquivo .json ou cole o código do backup.'; errEl.classList.remove('hidden'); return; }
+  let parsed;
+  try{ parsed=JSON.parse(raw); }
+  catch(e){ errEl.textContent='Não foi possível ler o backup: o conteúdo não é um JSON válido.'; errEl.classList.remove('hidden'); return; }
+  const d=validateBackup(parsed);
+  if(!d){ errEl.textContent='Este arquivo não parece ser um backup válido do GameOver.'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+
+  const resumo=`${d.quizzes.length} quizzes, ${d.menus.length} menus, ${d.stats.length} registros de questões e ${d.goals.length} metas`;
+  if(!await modalConfirm(`Importar este backup (${resumo})? Todos os dados atuais serão substituídos.`,'Importar')) return;
+
+  quizzes=d.quizzes; menus=d.menus; bestScores=d.bestScores; sessions=d.sessions; stats=d.stats; goals=d.goals; trash=d.trash;
+  /* normaliza campos de versões antigas */
+  quizzes.forEach(z=>{ if(z.law==null)z.law=''; if(z.notes==null)z.notes=''; if(z.menuId===undefined)z.menuId=null; });
+  activeMenu='all';
+  await persistQuizzes(); await persistMenus(); await persistScores(); await persistSessions();
+  await persistStats(); await persistGoals(); await persistTrash();
+  await sSet(KEY_SEEDED,'1'); /* não recriar o quiz de exemplo por cima do backup */
+
+  await modalAlert(`Backup importado com sucesso: ${resumo}.`);
+  goHome();
+}
+
+/* =================== arrastar menus para reordenar =================== */
+function setupMenuDrag(){
+  const bar=document.getElementById('menu-bar');
+  let dragEl=null, startX=0, startY=0, dragging=false, suppressClick=false;
+
+  bar.addEventListener('pointerdown',e=>{
+    const t=e.target.closest('.mtab[data-mid]');
+    if(!t) return;
+    dragEl=t; dragging=false;
+    startX=e.clientX; startY=e.clientY;
+    try{ t.setPointerCapture(e.pointerId); }catch(err){}
+  });
+
+  bar.addEventListener('pointermove',e=>{
+    if(!dragEl) return;
+    const dx=e.clientX-startX, dy=e.clientY-startY;
+    if(!dragging){
+      /* só inicia o arrasto com intenção horizontal, para não atrapalhar a rolagem no celular */
+      if(Math.abs(dx)<8||Math.abs(dx)<=Math.abs(dy)) return;
+      dragging=true;
+      dragEl.classList.add('dragging');
+    }
+    e.preventDefault();
+    const tabs=[...bar.querySelectorAll('.mtab[data-mid]')].filter(x=>x!==dragEl);
+    for(const tab of tabs){
+      const r=tab.getBoundingClientRect();
+      if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top-10&&e.clientY<=r.bottom+10){
+        if(e.clientX<r.left+r.width/2) bar.insertBefore(dragEl,tab);
+        else bar.insertBefore(dragEl,tab.nextSibling);
+        break;
+      }
+    }
+  });
+
+  const finish=async ()=>{
+    if(!dragEl) return;
+    const wasDragging=dragging;
+    dragEl.classList.remove('dragging');
+    dragEl=null; dragging=false;
+    if(wasDragging){
+      suppressClick=true;
+      setTimeout(()=>{ suppressClick=false; },80);
+      const order=[...bar.querySelectorAll('.mtab[data-mid]')].map(x=>x.dataset.mid);
+      menus.sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));
+      await persistMenus();
+      renderHome();
+    }
+  };
+  bar.addEventListener('pointerup',finish);
+  bar.addEventListener('pointercancel',finish);
+  /* evita que soltar o arrasto conte como clique e troque a aba ativa */
+  bar.addEventListener('click',e=>{ if(suppressClick){ e.preventDefault(); e.stopPropagation(); } },true);
+}
+
+/* =================== init =================== */
+(async function(){ await loadData(); setupMenuDrag(); renderHome(); })();
+</script>
+</body>
+</html>
